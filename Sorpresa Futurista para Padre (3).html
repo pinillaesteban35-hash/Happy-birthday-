@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Misión Futurista: ¡Feliz Cumpleaños César!</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome for Sci-Fi UI Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Sci-Fi Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&family=Montserrat:wght@400;600;700;800&family=Great+Vibes&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --cyan-glow: #00f3ff;
+            --purple-glow: #9d00ff;
+            --gold-glow: #ffb700;
+            --crimson-glow: #ff0055;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #030008;
+            font-family: 'Rajdhani', sans-serif;
+            color: #ffffff;
+        }
+
+        .app-container {
+            width: 100vw;
+            height: 100dvh;
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 50%, #0c051a 0%, #030008 100%);
+        }
+
+        .orbitron-font { font-family: 'Orbitron', sans-serif; }
+        .handwritten-font { font-family: 'Great Vibes', cursive; }
+
+        /* Canvas layered setup */
+        #bgCanvas, #fxCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        #bgCanvas { z-index: 1; }
+        #fxCanvas { z-index: 25; }
+
+        /* Cyberpunk HUD Overlay Grid & Scanlines */
+        .hud-scanlines {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 4px, 6px 100%;
+            z-index: 2;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        .hud-vignette {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, transparent 40%, rgba(3, 0, 8, 0.85) 100%);
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        /* Scenes logic */
+        .scene {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1rem 2rem 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: scale(0.96) translateY(10px);
+        }
+
+        .scene.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1) translateY(0);
+        }
+
+        /* Sci-Fi Chamfered HUD Cards */
+        .cyber-card {
+            background: rgba(10, 12, 28, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.15), inset 0 0 15px rgba(0, 243, 255, 0.05);
+            clip-path: polygon(
+                0 15px, 15px 0, 
+                calc(100% - 15px) 0, 100% 15px, 
+                100% calc(100% - 15px), calc(100% - 15px) 100%, 
+                15px 100%, 0 calc(100% - 15px)
+            );
+            position: relative;
+        }
+
+        .cyber-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 20px; right: 20px; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--cyan-glow), transparent);
+        }
+
+        .cyber-card-gold {
+            background: rgba(22, 16, 8, 0.75);
+            border-color: rgba(255, 183, 0, 0.4);
+            box-shadow: 0 0 30px rgba(255, 183, 0, 0.2), inset 0 0 20px rgba(255, 183, 0, 0.08);
+        }
+        .cyber-card-gold::before {
+            background: linear-gradient(90deg, transparent, var(--gold-glow), transparent);
+        }
+
+        /* High-Tech Buttons */
+        .btn-cyber {
+            background: linear-gradient(135deg, rgba(0, 243, 255, 0.2) 0%, rgba(157, 0, 255, 0.3) 100%);
+            border: 1px solid var(--cyan-glow);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.4), inset 0 0 10px rgba(0, 243, 255, 0.2);
+            clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-cyber-gold {
+            background: linear-gradient(135deg, rgba(255, 183, 0, 0.25) 0%, rgba(255, 0, 85, 0.35) 100%);
+            border-color: var(--gold-glow);
+            box-shadow: 0 0 25px rgba(255, 183, 0, 0.5), inset 0 0 12px rgba(255, 183, 0, 0.25);
+        }
+
+        .btn-cyber:active {
+            transform: scale(0.96);
+            filter: brightness(1.3);
+        }
+
+        /* Shimmer pulse for button */
+        .btn-cyber::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(60deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: rotate(30deg);
+            animation: cyberShimmer 3s infinite;
+        }
+
+        @keyframes cyberShimmer {
+            0% { transform: translateX(-100%) rotate(30deg); }
+            100% { transform: translateX(100%) rotate(30deg); }
+        }
+
+        /* Glow utilities */
+        .text-glow-cyan { text-shadow: 0 0 10px rgba(0,243,255,0.8), 0 0 20px rgba(0,243,255,0.4); }
+        .text-glow-gold { text-shadow: 0 0 10px rgba(255,183,0,0.8), 0 0 25px rgba(255,183,0,0.5); }
+        .text-glow-crimson { text-shadow: 0 0 12px rgba(255,0,85,0.9), 0 0 25px rgba(255,0,85,0.5); }
+
+        /* Hero Flying & Aura Animations */
+        .aura-ki {
+            filter: drop-shadow(0 0 20px #ffb700) drop-shadow(0 0 35px #ff4500);
+            animation: kiPulse 1.2s infinite alternate ease-in-out;
+        }
+
+        .aura-plasma {
+            filter: drop-shadow(0 0 20px #00f3ff) drop-shadow(0 0 35px #0066ff);
+            animation: plasmaPulse 1.5s infinite alternate ease-in-out;
+        }
+
+        @keyframes kiPulse {
+            0% { transform: scale(1); filter: drop-shadow(0 0 15px #ffb700); }
+            100% { transform: scale(1.04); filter: drop-shadow(0 0 30px #ffe600); }
+        }
+
+        @keyframes plasmaPulse {
+            0% { transform: scale(1); filter: drop-shadow(0 0 15px #00f3ff); }
+            100% { transform: scale(1.04); filter: drop-shadow(0 0 32px #00a2ff); }
+        }
+
+        .fly-in-left { animation: cyberFlyLeft 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .fly-in-top { animation: cyberFlyTop 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        @keyframes cyberFlyLeft {
+            0% { transform: translateX(-160%) translateY(40px) scale(0.4); opacity: 0; }
+            100% { transform: translateX(0) translateY(0) scale(1); opacity: 1; }
+        }
+
+        @keyframes cyberFlyTop {
+            0% { transform: translateY(-160%) translateX(40px) scale(0.4); opacity: 0; }
+            100% { transform: translateY(0) translateX(0) scale(1); opacity: 1; }
+        }
+
+        .floating { animation: floatSlow 3.2s ease-in-out infinite alternate; }
+        .floating-alt { animation: floatSlow 3.8s ease-in-out infinite alternate-reverse; }
+
+        @keyframes floatSlow {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-10px) rotate(1deg); }
+        }
+
+        /* Sci-Fi Glitch Transition Overlay */
+        #portalFlash {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle, rgba(0, 243, 255, 0.8) 0%, rgba(157, 0, 255, 0.9) 100%);
+            z-index: 99;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease-out;
+        }
+
+        /* Custom Scrollbar for Letter */
+        .custom-scroll::-webkit-scrollbar { width: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 183, 0, 0.5);
+            border-radius: 4px;
+        }
+
+        .cape-flutter {
+            transform-origin: top left;
+            animation: capeMotion 1.5s ease-in-out infinite alternate;
+        }
+        @keyframes capeMotion {
+            0% { transform: rotate(0deg) skewY(0deg); }
+            100% { transform: rotate(-4deg) skewY(-3deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Interactive Canvases -->
+        <canvas id="bgCanvas"></canvas>
+        <canvas id="fxCanvas"></canvas>
+
+        <!-- HUD Aesthetic Layer -->
+        <div class="hud-scanlines"></div>
+        <div class="hud-vignette"></div>
+
+        <!-- Portal Glitch Flash Overlay -->
+        <div id="portalFlash"></div>
+
+        <!-- Top Sci-Fi Status Bar & Audio Toggle -->
+        <header class="absolute top-0 inset-x-0 z-40 p-4 flex justify-between items-center pointer-events-auto">
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+                <span class="orbitron-font text-[10px] tracking-widest text-cyan-300 font-bold uppercase">HUD // MISSION: CESAR</span>
+            </div>
+            
+            <button id="audioBtn" class="w-10 h-10 rounded-lg bg-black/60 border border-cyan-500/40 text-cyan-300 flex items-center justify-center text-sm shadow-[0_0_15px_rgba(0,243,255,0.2)] active:scale-90 transition-transform">
+                <i class="fas fa-volume-mute" id="audioIcon"></i>
+            </button>
+        </header>
+
+        <!-- ========================================================================= -->
+        <!-- ESCENA 1: COMANDO INICIAL (Cyberpunk / Sci-Fi) -->
+        <!-- ========================================================================= -->
+        <section id="scene1" class="scene active">
+            <!-- Top Spacing for HUD bar -->
+            <div class="w-full pt-12 flex justify-center">
+                <div class="px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-400/40 text-[11px] font-mono text-cyan-300 tracking-wider flex items-center gap-2">
+                    <i class="fas fa-satellite-dish text-cyan-400 animate-pulse"></i>
+                    <span>BUSCANDO HÉROES DEL UNIVERSO...</span>
+                </div>
+            </div>
+
+            <!-- Central HUD Hologram Panel -->
+            <div class="cyber-card w-full max-w-xs p-6 text-center my-auto">
+                <div class="text-[10px] font-mono text-cyan-400/70 tracking-widest uppercase mb-2">
+                    [ TRANSMISIÓN RESTRINGIDA ]
+                </div>
+                
+                <h1 class="orbitron-font text-3xl font-black tracking-wider text-white text-glow-cyan mb-4">
+                    Padre César…
+                </h1>
+                
+                <p class="text-sm sm:text-base text-slate-300 font-semibold leading-relaxed">
+                    Hay una misión que requiere a dos de los héroes más poderosos del universo.
+                </p>
+
+                <!-- Micro HUD Metrics -->
+                <div class="grid grid-cols-2 gap-2 mt-5 pt-4 border-t border-cyan-500/20 text-[10px] font-mono text-cyan-300/80">
+                    <div>ENERGÍA: <span class="text-emerald-400">100%</span></div>
+                    <div>PRIORIDAD: <span class="text-yellow-400">MÁXIMA</span></div>
+                </div>
+            </div>
+
+            <!-- Action Launch Button -->
+            <div class="w-full pb-4 flex justify-center">
+                <button onclick="goToScene(2)" class="btn-cyber btn-cyber-gold w-full max-w-xs py-4 text-white font-black text-base orbitron-font tracking-wider flex items-center justify-center gap-3">
+                    <span>COMENZAR MISIÓN</span>
+                    <span class="text-xl">🚀</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- ESCENA 2: TRANSMISIÓN DE HÉROES (Goku & Superman High-Tech) -->
+        <!-- ========================================================================= -->
+        <section id="scene2" class="scene">
+            <!-- Top Controls -->
+            <div class="w-full pt-12 flex justify-between items-center">
+                <button onclick="goToScene(1)" class="px-3 py-1.5 rounded-md bg-cyan-950/80 border border-cyan-500/40 text-xs font-mono text-cyan-300 flex items-center gap-1.5 active:scale-95 transition-all">
+                    <i class="fas fa-chevron-left text-[10px]"></i> VOLVER
+                </button>
+                <span class="text-[11px] font-mono text-yellow-400 tracking-widest">FASE 01 // INVOCACIÓN</span>
+            </div>
+
+            <!-- Vector Hero Stage -->
+            <div class="w-full flex justify-center items-center gap-2 my-auto py-2 relative">
+                
+                <!-- Guerrero Neón (Inspired Saiyan) -->
+                <div id="heroGoku" class="relative flex flex-col items-center opacity-0">
+                    <div class="aura-ki rounded-full p-1">
+                        <svg width="125" height="155" viewBox="0 0 120 150" fill="none">
+                            <!-- Ki Aura Rays -->
+                            <polygon points="60,2 32,42 42,38 18,68 48,68 12,108 60,82 108,108 72,68 102,68 78,38 88,42" fill="#FFB700" opacity="0.85"/>
+                            
+                            <!-- Cyber Hair -->
+                            <path d="M60 8 L45 33 L28 18 L32 43 L12 38 L28 58 L8 63 L30 73 L48 78 L72 78 L90 73 L112 63 L92 58 L108 38 L88 43 L92 18 L75 33 Z" fill="#FFC107" stroke="#FF5722" stroke-width="2"/>
+                            <path d="M60 16 L50 36 L36 26 L38 46 L23 43 L36 60 L48 70 L72 70 L84 60 L97 43 L82 46 L84 26 L70 36 Z" fill="#FFE082"/>
+                            
+                            <!-- Head & Cyber Eyepiece -->
+                            <polygon points="40,63 80,63 72,93 60,103 48,93" fill="#FFCC80"/>
+                            <!-- Cyber Scouter Eye -->
+                            <polygon points="44,73 56,75 54,80 44,78" fill="#00E676"/>
+                            <polygon points="76,73 64,75 66,80 76,78" fill="#00E676"/>
+                            <path d="M42 70 L58 74" stroke="#E65100" stroke-width="3"/>
+                            <path d="M78 70 L62 74" stroke="#E65100" stroke-width="3"/>
+                            <path d="M52 90 Q60 95 68 90" stroke="#5D4037" stroke-width="2" fill="none"/>
+                            
+                            <!-- Hi-Tech Gi Suit -->
+                            <path d="M35 98 L18 145 L45 150 L60 113 L75 150 L102 145 L85 98 Z" fill="#FF3D00"/>
+                            <polygon points="48,98 72,98 66,123 54,123" fill="#00B0FF"/>
+                            <rect x="38" y="123" width="44" height="9" rx="2" fill="#0091EA"/>
+                        </svg>
+                    </div>
+                    <span class="text-[10px] font-mono font-bold tracking-wider text-amber-300 mt-1 bg-black/70 px-2 py-0.5 rounded border border-amber-500/40">GUERRERO Z</span>
+                </div>
+
+                <!-- Superhéroe Neón (Inspired Blue/Red Hero) -->
+                <div id="heroSuperman" class="relative flex flex-col items-center opacity-0">
+                    <div class="aura-plasma rounded-full p-1">
+                        <svg width="125" height="155" viewBox="0 0 120 150" fill="none">
+                            <!-- Plasma Cape -->
+                            <path class="cape-flutter" d="M28 62 C 8 88, -2 128, -12 148 C 28 143, 78 143, 132 148 C 122 128, 112 88, 92 62 Z" fill="#FF0055"/>
+                            
+                            <!-- Head & Hair -->
+                            <path d="M45 38 C45 23, 75 23, 75 38 L75 58 L45 58 Z" fill="#FFCC80"/>
+                            <path d="M42 40 C40 20, 60 13, 78 20 C80 30, 70 36, 70 36 C60 28, 48 33, 42 40 Z" fill="#111"/>
+                            <path d="M62 28 Q58 36 54 34" stroke="#111" stroke-width="3" fill="none"/>
+                            
+                            <!-- Face & Eyes -->
+                            <polygon points="46,53 74,53 68,78 60,84 52,78" fill="#FFCC80"/>
+                            <circle cx="53" cy="61" r="3" fill="#00F3FF"/>
+                            <circle cx="67" cy="61" r="3" fill="#00F3FF"/>
+                            <path d="M50 72 Q60 77 70 72" stroke="#D84315" stroke-width="2" fill="none"/>
+                            
+                            <!-- Sci-Fi Armored Suit -->
+                            <path d="M28 80 L18 140 L102 140 L92 80 Z" fill="#0051FF"/>
+                            <!-- Crest Shield -->
+                            <polygon points="60,86 78,96 70,116 60,122 50,116 42,96" fill="#FFD54F" stroke="#FF0055" stroke-width="2.5"/>
+                            <path d="M49 96 C49 90, 70 90, 67 100 C64 110, 51 108, 66 116" stroke="#FF0055" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <span class="text-[10px] font-mono font-bold tracking-wider text-cyan-300 mt-1 bg-black/70 px-2 py-0.5 rounded border border-cyan-500/40">HÉROES DE ACERO</span>
+                </div>
+
+            </div>
+
+            <!-- Dynamic Story Transmission Card -->
+            <div class="cyber-card w-full max-w-xs p-4 text-center min-h-[110px] flex items-center justify-center">
+                <p id="storyText" class="text-sm sm:text-base font-bold text-slate-100 leading-snug">
+                    <!-- Text updated by script -->
+                </p>
+            </div>
+
+            <!-- Next Button -->
+            <div class="w-full pb-4 flex justify-center">
+                <button id="btnScene2" onclick="goToScene(3)" class="btn-cyber btn-cyber-gold w-full max-w-xs py-3.5 text-white font-black text-base orbitron-font tracking-wider flex items-center justify-center gap-2 opacity-0 transition-opacity duration-500 pointer-events-none">
+                    <span>¿QUÉ MISIÓN?</span>
+                    <span class="text-xl">👀</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- ESCENA 3: LA MISIÓN & FELICITACIÓN ÉPICA -->
+        <!-- ========================================================================= -->
+        <section id="scene3" class="scene">
+            <!-- Top Controls -->
+            <div class="w-full pt-12 flex justify-between items-center">
+                <button onclick="goToScene(2)" class="px-3 py-1.5 rounded-md bg-cyan-950/80 border border-cyan-500/40 text-xs font-mono text-cyan-300 flex items-center gap-1.5 active:scale-95 transition-all">
+                    <i class="fas fa-chevron-left text-[10px]"></i> VOLVER
+                </button>
+                <span class="text-[11px] font-mono text-cyan-300 tracking-widest">FASE 02 // CELEBRACIÓN</span>
+            </div>
+
+            <!-- Celebration Banner -->
+            <div class="cyber-card cyber-card-gold w-full max-w-xs p-5 my-auto text-center flex flex-col items-center">
+                
+                <div class="flex items-center justify-center -space-x-3 mb-3 floating">
+                    <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-amber-500 to-orange-600 p-0.5 shadow-[0_0_15px_rgba(255,183,0,0.6)]">
+                        <div class="w-full h-full rounded-full bg-slate-950 flex items-center justify-center text-2xl">🐉</div>
+                    </div>
+                    <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 p-0.5 shadow-[0_0_15px_rgba(0,243,255,0.6)]">
+                        <div class="w-full h-full rounded-full bg-slate-950 flex items-center justify-center text-2xl">🦸‍♂️</div>
+                    </div>
+                </div>
+
+                <div class="text-[10px] font-mono text-amber-300 tracking-widest uppercase mb-1">
+                    [ CONVERGENCIA UNIVERSAL ]
+                </div>
+
+                <h2 class="orbitron-font text-2xl sm:text-3xl font-black text-glow-gold text-amber-300 leading-tight mb-3">
+                    🎂 ¡FELIZ CUMPLEAÑOS, CÉSAR! 🎂
+                </h2>
+
+                <div class="space-y-2 text-sm text-slate-200">
+                    <p class="font-medium">Goku y Superman se unieron para decirte:</p>
+                    <p class="font-black text-base text-white bg-gradient-to-r from-red-600/30 via-yellow-500/40 to-red-600/30 py-2 px-3 rounded border border-amber-400/50 shadow-inner">
+                        ¡Que tengas un día increíble, Padre! ❤️
+                    </p>
+                </div>
+            </div>
+
+            <!-- Action Button Scene 4 -->
+            <div class="w-full pb-4 flex justify-center">
+                <button onclick="goToScene(4)" class="btn-cyber w-full max-w-xs py-4 text-white font-black text-sm sm:text-base orbitron-font tracking-wider flex items-center justify-center gap-2">
+                    <span>Ahora viene algo de tu hijo</span>
+                    <span class="text-lg">❤️</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- ESCENA 4: CARTA PERSONAL CÁLIDA-CYBER -->
+        <!-- ========================================================================= -->
+        <section id="scene4" class="scene">
+            <!-- Top Controls -->
+            <div class="w-full pt-12 flex justify-between items-center mb-1">
+                <button onclick="goToScene(3)" class="px-3 py-1.5 rounded-md bg-rose-950/80 border border-rose-500/40 text-xs font-mono text-rose-300 flex items-center gap-1.5 active:scale-95 transition-all">
+                    <i class="fas fa-chevron-left text-[10px]"></i> VOLVER
+                </button>
+                <span class="text-[11px] font-mono text-amber-300 tracking-widest">TRANSMISIÓN EMOCIONAL</span>
+            </div>
+
+            <!-- Warm Cyber Holographic Letter Card -->
+            <div class="cyber-card cyber-card-gold w-full max-w-xs my-auto p-5 flex flex-col max-h-[72dvh]">
+                
+                <div class="text-center pb-2.5 border-b border-amber-500/30 mb-3 flex-shrink-0">
+                    <h3 class="orbitron-font text-lg font-extrabold text-amber-200 tracking-wide text-glow-gold">
+                        Para mi Padre, César ❤️
+                    </h3>
+                </div>
+
+                <div id="letterBody" class="overflow-y-auto custom-scroll pr-1 text-slate-100 text-xs sm:text-sm leading-relaxed space-y-3 font-medium text-left">
+                    <p class="letter-paragraph opacity-0 transition-opacity duration-700">
+                        Padre, hoy quería hacerte algo diferente.
+                    </p>
+                    <p class="letter-paragraph opacity-0 transition-opacity duration-700">
+                        Puede que esta vez no tenga un regalo comprado, pero quería darte algo hecho con mucho cariño.
+                    </p>
+                    <p class="letter-paragraph opacity-0 transition-opacity duration-700">
+                        Gracias por todo lo que haces por mí, por los momentos que hemos vivido y por estar ahí. Muchas veces uno no dice estas cosas, pero hoy quería que supieras que te quiero muchísimo y que me alegra poder llamarte mi Padre.
+                    </p>
+                    <p class="letter-paragraph opacity-0 transition-opacity duration-700">
+                        Espero que cumplas muchos años más, que tengas salud, tranquilidad y muchísimos momentos buenos.
+                    </p>
+                    <p class="letter-paragraph opacity-0 transition-opacity duration-700 font-bold text-amber-300 text-sm">
+                        Feliz cumpleaños, Padre. ❤️
+                    </p>
+                    
+                    <div class="pt-3 text-right opacity-0 transition-opacity duration-1000 letter-paragraph">
+                        <p class="handwritten-font text-2xl text-amber-200">Con mucho cariño, tu hijo.</p>
+                        <p class="text-xl mt-1">🎂 🥳 ❤️</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Replay Option -->
+            <div class="w-full pb-2 flex justify-center">
+                <button onclick="goToScene(1)" class="px-4 py-2 rounded-lg bg-black/60 hover:bg-black/80 text-xs font-mono font-bold text-cyan-300 border border-cyan-500/40 flex items-center gap-2 active:scale-95 transition-all">
+                    <i class="fas fa-redo text-amber-400"></i> REPETIR TRANSMISIÓN
+                </button>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- JAVASCRIPT LOGIC, AUDIO & PARTICLES -->
+    <!-- ========================================================================= -->
+    <script>
+        let currentScene = 1;
+        let bgCanvas, bgCtx, fxCanvas, fxCtx;
+        let width, height;
+        
+        let audioCtx = null;
+        let isMuted = true;
+
+        let quantumStars = [];
+        let cyberParticles = [];
+        let neonConfetti = [];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initCanvases();
+            createQuantumStars();
+            setupAudioToggle();
+            startLoop();
+            
+            window.addEventListener('resize', handleResize);
+        });
+
+        function handleResize() {
+            width = bgCanvas.width = fxCanvas.width = window.innerWidth;
+            height = bgCanvas.height = fxCanvas.height = window.innerHeight;
+            createQuantumStars();
+        }
+
+        function initCanvases() {
+            bgCanvas = document.getElementById('bgCanvas');
+            bgCtx = bgCanvas.getContext('2d');
+            fxCanvas = document.getElementById('effectsCanvas') || document.getElementById('fxCanvas');
+            fxCtx = fxCanvas.getContext('2d');
+
+            width = bgCanvas.width = fxCanvas.width = window.innerWidth;
+            height = bgCanvas.height = fxCanvas.height = window.innerHeight;
+        }
+
+        function createQuantumStars() {
+            quantumStars = [];
+            const count = Math.floor((width * height) / 2500);
+            for (let i = 0; i < count; i++) {
+                quantumStars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 1.8 + 0.4,
+                    alpha: Math.random(),
+                    speed: Math.random() * 0.03 + 0.005,
+                    color: Math.random() > 0.6 ? '#00f3ff' : (Math.random() > 0.3 ? '#ffb700' : '#ffffff')
+                });
+            }
+        }
+
+        function triggerNeonConfetti() {
+            neonConfetti = [];
+            const colors = ['#00f3ff', '#ffb700', '#ff0055', '#9d00ff', '#39ff14'];
+            for (let i = 0; i < 110; i++) {
+                neonConfetti.push({
+                    x: Math.random() * width,
+                    y: -20 - Math.random() * 100,
+                    size: Math.random() * 7 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    vy: Math.random() * 3.5 + 2.5,
+                    vx: (Math.random() - 0.5) * 2.5,
+                    rotation: Math.random() * 360,
+                    rSpeed: (Math.random() - 0.5) * 8
+                });
+            }
+        }
+
+        /* Render Animation Loop */
+        function startLoop() {
+            bgCtx.clearRect(0, 0, width, height);
+            fxCtx.clearRect(0, 0, width, height);
+
+            // Background Quantum Grid Particles
+            quantumStars.forEach(s => {
+                s.alpha += s.speed;
+                if (s.alpha > 1 || s.alpha < 0.1) s.speed = -s.speed;
+                
+                bgCtx.save();
+                bgCtx.globalAlpha = Math.max(0, Math.min(1, s.alpha));
+                bgCtx.fillStyle = s.color;
+                bgCtx.beginPath();
+                bgCtx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.restore();
+            });
+
+            // Sci-Fi Scene 4 Soft Bokeh Hearts/Lights
+            if (currentScene === 4) {
+                bgCtx.save();
+                bgCtx.fillStyle = 'rgba(255, 0, 85, 0.05)';
+                bgCtx.fillRect(0, 0, width, height);
+                bgCtx.restore();
+            }
+
+            // FX Neon Confetti Render
+            if (neonConfetti.length > 0) {
+                neonConfetti.forEach((c) => {
+                    c.y += c.vy;
+                    c.x += c.vx;
+                    c.rotation += c.rSpeed;
+
+                    fxCtx.save();
+                    fxCtx.translate(c.x, c.y);
+                    fxCtx.rotate((c.rotation * Math.PI) / 180);
+                    fxCtx.fillStyle = c.color;
+                    fxCtx.shadowColor = c.color;
+                    fxCtx.shadowBlur = 8;
+                    fxCtx.fillRect(-c.size / 2, -c.size / 2, c.size, c.size);
+                    fxCtx.restore();
+
+                    if (c.y > height + 20 && currentScene === 3) {
+                        c.y = -10;
+                        c.x = Math.random() * width;
+                    }
+                });
+            }
+
+            requestAnimationFrame(startLoop);
+        }
+
+        /* ------------------------------------------------------------------------- */
+        /* SCENE NAVIGATION & CYBER GLITCH FLASH */
+        /* ------------------------------------------------------------------------- */
+        function goToScene(sceneNum) {
+            playSciFiSound(500 + sceneNum * 120, 0.12, 'sawtooth');
+            
+            const flash = document.getElementById('portalFlash');
+            flash.style.opacity = '0.9';
+
+            setTimeout(() => {
+                document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+                
+                currentScene = sceneNum;
+                const targetScene = document.getElementById(`scene${sceneNum}`);
+                targetScene.classList.add('active');
+
+                if (sceneNum === 2) {
+                    runScene2Sequence();
+                } else if (sceneNum === 3) {
+                    triggerNeonConfetti();
+                    playSciFiFanfare();
+                } else if (sceneNum === 4) {
+                    runScene4Letter();
+                }
+
+                flash.style.opacity = '0';
+            }, 300);
+        }
+
+        /* ------------------------------------------------------------------------- */
+        /* SCENE 2 FLY-IN SEQUENCE */
+        /* ------------------------------------------------------------------------- */
+        function runScene2Sequence() {
+            const heroGoku = document.getElementById('heroGoku');
+            const heroSuperman = document.getElementById('heroSuperman');
+            const storyText = document.getElementById('storyText');
+            const btnScene2 = document.getElementById('btnScene2');
+
+            heroGoku.className = 'relative flex flex-col items-center opacity-0';
+            heroSuperman.className = 'relative flex flex-col items-center opacity-0';
+            btnScene2.classList.add('opacity-0', 'pointer-events-none');
+            storyText.innerHTML = '';
+
+            setTimeout(() => {
+                heroGoku.classList.remove('opacity-0');
+                heroGoku.classList.add('fly-in-left', 'floating');
+                playSciFiSound(350, 0.25, 'sawtooth');
+            }, 300);
+
+            setTimeout(() => {
+                heroSuperman.classList.remove('opacity-0');
+                heroSuperman.classList.add('fly-in-top', 'floating-alt');
+                playSciFiSound(600, 0.25, 'triangle');
+            }, 1000);
+
+            const lines = [
+                "✨ Goku y Superman han llegado.",
+                "Goku dejó por un momento su entrenamiento…",
+                "Superman dejó Metrópolis…",
+                "⚡ Porque hoy tienen una misión mucho más importante."
+            ];
+
+            lines.forEach((line, index) => {
+                setTimeout(() => {
+                    storyText.style.opacity = '0';
+                    setTimeout(() => {
+                        storyText.innerHTML = line;
+                        storyText.style.opacity = '1';
+                        playSciFiSound(700 + index * 90, 0.08, 'sine');
+                    }, 150);
+                }, 1600 + (index * 2100));
+            });
+
+            setTimeout(() => {
+                btnScene2.classList.remove('opacity-0', 'pointer-events-none');
+            }, 1600 + (lines.length * 2100));
+        }
+
+        /* ------------------------------------------------------------------------- */
+        /* SCENE 4 TYPEWRITER FADE */
+        /* ------------------------------------------------------------------------- */
+        function runScene4Letter() {
+            const paragraphs = document.querySelectorAll('.letter-paragraph');
+            paragraphs.forEach(p => p.classList.add('opacity-0'));
+
+            paragraphs.forEach((p, idx) => {
+                setTimeout(() => {
+                    p.classList.remove('opacity-0');
+                    playSciFiSound(520 + idx * 45, 0.09, 'sine');
+                }, 500 + (idx * 1500));
+            });
+        }
+
+        /* ------------------------------------------------------------------------- */
+        /* SYNTH AUDIO ENGINE */
+        /* ------------------------------------------------------------------------- */
+        function setupAudioToggle() {
+            const btn = document.getElementById('audioBtn');
+            const icon = document.getElementById('audioIcon');
+
+            btn.addEventListener('click', () => {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                isMuted = !isMuted;
+                if (isMuted) {
+                    icon.className = 'fas fa-volume-mute';
+                    btn.classList.remove('border-cyan-400', 'bg-cyan-500/20');
+                } else {
+                    icon.className = 'fas fa-volume-up text-cyan-300';
+                    btn.classList.add('border-cyan-400', 'bg-cyan-500/20');
+                    playSciFiSound(880, 0.15, 'sine');
+                }
+            });
+        }
+
+        function playSciFiSound(freq, duration, type = 'sine') {
+            if (isMuted || !audioCtx) return;
+
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                console.warn(e);
+            }
+        }
+
+        function playSciFiFanfare() {
+            if (isMuted || !audioCtx) return;
+            const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+            notes.forEach((freq, idx) => {
+                setTimeout(() => {
+                    playSciFiSound(freq, 0.25, 'triangle');
+                }, idx * 100);
+            });
+        }
+    </script>
+</body>
+</html>
